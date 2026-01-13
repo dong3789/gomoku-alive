@@ -19,11 +19,13 @@ function OnlineLobby({ onBack }: OnlineLobbyProps) {
 
   // 소켓 연결
   useEffect(() => {
-    const serverUrl = import.meta.env.PROD
-      ? window.location.origin
-      : 'http://localhost:3001';
+    const serverUrl = import.meta.env.VITE_SERVER_URL ||
+      (import.meta.env.PROD ? window.location.origin : 'http://localhost:3001');
 
-    const newSocket = io(serverUrl);
+    const newSocket = io(serverUrl, {
+      timeout: 5000,
+      reconnectionAttempts: 3,
+    });
 
     newSocket.on('connect', () => {
       setIsConnected(true);
@@ -32,6 +34,10 @@ function OnlineLobby({ onBack }: OnlineLobbyProps) {
 
     newSocket.on('disconnect', () => {
       setIsConnected(false);
+    });
+
+    newSocket.on('connect_error', () => {
+      setError('서버에 연결할 수 없습니다. 온라인 대전은 별도 서버가 필요합니다.');
     });
 
     newSocket.on('roomList', (roomList: Room[]) => {
